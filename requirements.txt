@@ -4,7 +4,7 @@ Celery==5.3.4
 Redis==5.0.1
 google-cloud-speech==2.23.0
 google-cloud-translate==3.14.0
-yt-dlp==2024.10.7
+yt-dlp>=2025.10.22
 pydub==0.25.1
 python-dotenv==1.0.0
 gunicorn==21.2.0
