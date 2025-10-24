@@ -31,7 +31,7 @@ def update_task_status(task_id: str, status: str, message: str, progress: int = 
 
 @celery.task(bind=True)
 def process_video_task(self, url: str, task_id: str):
-    """Background task for video processing"""
+    """Background task for video processing using Whisper + Gemini"""
     try:
         # Create temporary directory for this task
         temp_dir = os.path.join(Config.UPLOAD_FOLDER, task_id)
@@ -141,7 +141,7 @@ def cleanup_old_files():
 # Configure periodic cleanup (every hour)
 celery.conf.beat_schedule = {
     'cleanup-old-files': {
-        'task': 'tasks.cleanup_old_files',
+        'task': 'tasks_gemini.cleanup_old_files',
         'schedule': 3600.0,  # Every hour
     },
 }
