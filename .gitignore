@@ -1,0 +1,31 @@
+# Environment
+.env
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+temp_files/
+output_files/
+*.log
+
+# Google Cloud
+*.json
+!package.json
+
+# OS
+.DS_Store
+Thumbs.db
