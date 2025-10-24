@@ -18,7 +18,7 @@ class GeminiVideoProcessor:
             raise ValueError("GEMINI_API_KEY not found. Please set it in .env file")
         
         genai.configure(api_key=api_key)
-        self.gemini_model = genai.GenerativeModel('gemini-pro')
+        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Load Whisper model (base model - good balance of speed and accuracy)
         print("Loading Whisper model...")
