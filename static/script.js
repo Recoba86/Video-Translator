@@ -26,6 +26,7 @@ const videoSource = document.getElementById('video-source');
 let currentTaskId = null;
 let currentFilename = null;
 let statusCheckInterval = null;
+let isProcessing = false;
 
 // Stage mapping
 const stageMapping = {
@@ -47,6 +48,39 @@ retryBtn.addEventListener('click', resetApp);
 videoUrlInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         startProcessing();
+    }
+});
+
+// Warn before leaving page if processing
+window.addEventListener('beforeunload', (e) => {
+    if (isProcessing && currentTaskId) {
+        e.preventDefault();
+        e.returnValue = 'پردازش ویدئو در حال انجام است. آیا مطمئن هستید؟ (Video processing in progress. Are you sure?)';
+        return e.returnValue;
+    }
+});
+
+// Cancel task when page is closed/hidden
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isProcessing && currentTaskId) {
+        // Send cancel request when hiding
+        cancelTask();
+    } else if (!document.hidden && !isProcessing && !currentTaskId) {
+        // When coming back to page and no task active, ensure clean state
+        console.log('Tab became visible - ensuring clean state');
+        if (errorSection && !errorSection.classList.contains('hidden') && 
+            progressSection.classList.contains('hidden') && 
+            resultSection.classList.contains('hidden')) {
+            // If showing error but nothing is processing, reset to input
+            resetApp();
+        }
+    }
+});
+
+// Also cancel on page unload (as backup)
+window.addEventListener('unload', () => {
+    if (isProcessing && currentTaskId) {
+        cancelTask();
     }
 });
 
@@ -81,6 +115,7 @@ async function startProcessing() {
 
         if (data.success) {
             currentTaskId = data.task_id;
+            isProcessing = true;
             
             // Hide input, show progress
             inputSection.classList.add('hidden');
@@ -114,13 +149,55 @@ async function checkStatus() {
 
         if (data.status === 'completed') {
             clearInterval(statusCheckInterval);
+            isProcessing = false;
             handleCompletion(data);
         } else if (data.status === 'failed') {
             clearInterval(statusCheckInterval);
+            isProcessing = false;
             showError(data.message || 'خطا در پردازش ویدئو');
+        } else if (data.status === 'not_found') {
+            clearInterval(statusCheckInterval);
+            isProcessing = false;
+            showError('وضعیت تسک یافت نشد. لطفاً دوباره تلاش کنید.\n(Task not found. Server may have restarted. Please try again.)');
+        } else if (data.status === 'cancelled') {
+            clearInterval(statusCheckInterval);
+            isProcessing = false;
+            showError('پردازش توسط کاربر لغو شد (Processing cancelled by user)');
         }
     } catch (error) {
         console.error('Error checking status:', error);
+        // If we get repeated errors, stop polling and show error
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+            isProcessing = false;
+            showError(`خطای شبکه: ${error.message}\nلطفاً دوباره تلاش کنید.`);
+        }
+    }
+}
+
+async function cancelTask() {
+    if (!currentTaskId) return;
+    
+    try {
+        // Use sendBeacon for reliable delivery even during page unload
+        const cancelUrl = `${API_BASE}/api/cancel/${currentTaskId}`;
+        
+        if (navigator.sendBeacon) {
+            // sendBeacon is better for unload events
+            const blob = new Blob(['{}'], { type: 'application/json' });
+            navigator.sendBeacon(cancelUrl, blob);
+        } else {
+            // Fallback to fetch
+            fetch(cancelUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true
+            }).catch(err => console.error('Error cancelling task:', err));
+        }
+        
+        isProcessing = false;
+    } catch (error) {
+        console.error('Error cancelling task:', error);
     }
 }
 
@@ -212,6 +289,7 @@ function resetApp() {
     // Clear state
     currentTaskId = null;
     currentFilename = null;
+    isProcessing = false;
     
     if (statusCheckInterval) {
         clearInterval(statusCheckInterval);
@@ -247,12 +325,34 @@ function resetButton() {
     startBtn.innerHTML = '<span class="btn-text">شروع پردازش</span><span class="btn-icon">▶</span>';
 }
 
-// Health check on load
+// Initialize app on load
+window.addEventListener('DOMContentLoaded', () => {
+    // Force clean state immediately when DOM is ready
+    console.log('Initializing app...');
+    
+    // Ensure all sections are in correct initial state
+    inputSection.classList.remove('hidden');
+    progressSection.classList.add('hidden');
+    resultSection.classList.add('hidden');
+    errorSection.classList.add('hidden');
+    
+    // Clear any state
+    currentTaskId = null;
+    currentFilename = null;
+    isProcessing = false;
+    videoUrlInput.value = '';
+    
+    console.log('App initialized - ready to process videos');
+});
+
+// Health check after page fully loads
 window.addEventListener('load', async () => {
     try {
+        // Health check
         const response = await fetch(`${API_BASE}/api/health`);
         const data = await response.json();
         console.log('Service status:', data.status);
+        
     } catch (error) {
         console.error('Service health check failed:', error);
     }

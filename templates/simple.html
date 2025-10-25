@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>زیرنویس خودکار فارسی - AI Video Subtitler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFA726 0%, #42A5F5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #FFA726;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            direction: ltr;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #42A5F5;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #FFA726 0%, #42A5F5 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFA726 0%, #42A5F5 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .message {
+            text-align: center;
+            font-size: 18px;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .stage-info {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .stage-info.warning {
+            background: #fff3cd;
+            border-color: #ff9800;
+        }
+
+        .stage-info.translating {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .stage-title {
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #ff9800;
+        }
+
+        .stage-description {
+            color: #666;
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .warning-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #fcc;
+            color: #c00;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .success {
+            background: #efe;
+            border: 2px solid #cfc;
+            color: #060;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .video-result {
+            margin-top: 20px;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45B049 100%);
+            margin-top: 15px;
+        }
+        
+        .download-btn:hover {
+            background: linear-gradient(135deg, #45B049 0%, #4CAF50 100%);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #42A5F5;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .timing-info {
+            background: linear-gradient(135deg, #FFF3E0 0%, #E3F2FD 100%);
+            border: 2px solid #FFA726;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: right;
+        }
+        
+        .timing-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FF9800;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .total-time {
+            font-size: 24px;
+            font-weight: bold;
+            color: #42A5F5;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .stage-timing {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 15px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 6px;
+            border-right: 4px solid #FFA726;
+        }
+        
+        .stage-name {
+            color: #555;
+            font-size: 15px;
+        }
+        
+        .stage-duration {
+            color: #42A5F5;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 زیرنویس خودکار فارسی</h1>
+        <p class="subtitle">AI Video Subtitler with Persian Translation</p>
+
+        <form method="POST" action="/simple/process">
+            {% if not task_id %}
+            <div class="form-group">
+                <label for="video_url">آدرس ویدئو را وارد کنید:</label>
+                <input 
+                    type="url" 
+                    id="video_url" 
+                    name="video_url" 
+                    required 
+                    placeholder="https://www.youtube.com/watch?v=..."
+                >
+            </div>
+            {% endif %}
+
+            {% if not task_id %}
+            <button type="submit">▶ شروع پردازش</button>
+            {% endif %}
+        </form>
+
+        {% if task_id %}
+        <div class="status show">
+            <div class="message">{{ message }}</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ progress }}%">
+                    {{ progress }}%
+                </div>
+            </div>
+
+            {% if status == 'downloading' %}
+            <div class="stage-info">
+                <div class="stage-title">⏬ مرحله ۱ از ۵: دانلود ویدئو</div>
+                <div class="stage-description">
+                    ویدئو از سرور یوتیوب یا پلتفرم دیگر دانلود می‌شود.<br>
+                    زمان این مرحله به حجم ویدئو و سرعت اینترنت شما بستگی دارد.
+                </div>
+            </div>
+            {% elif status == 'transcribing' %}
+            <div class="stage-info translating">
+                <div class="warning-icon">⏳</div>
+                <div class="stage-title">🎤 مرحله ۲ از ۵: رونویسی صوت</div>
+                <div class="stage-description">
+                    <strong style="color: #1976d2;">🔄 این مرحله در حال انجام است...</strong><br><br>
+                    هوش مصنوعی Whisper در حال تبدیل صدای ویدئو به متن است.<br>
+                    زمان تقریبی: <strong>۳۰-۶۰ ثانیه برای هر دقیقه ویدئو</strong><br><br>
+                    <strong style="color: #f57c00;">⚙️ توجه:</strong> این مرحله هیچ progress بصری ندارد!<br>
+                    ممکن است به نظر برسد برنامه "گیر کرده" اما در واقع <strong>پردازش در حال انجام است</strong>.<br><br>
+                    <strong style="color: #e65100;">🚨 لطفاً صبور باشید و تب مرورگر را نبندید!</strong><br>
+                    صفحه به صورت خودکار هر ۲ ثانیه به‌روزرسانی می‌شود.
+                </div>
+            </div>
+            {% elif status == 'translating' %}
+            <div class="stage-info translating">
+                <div class="warning-icon">⚠️</div>
+                <div class="stage-title">🌐 مرحله ۳ از ۵: ترجمه به فارسی</div>
+                <div class="stage-description">
+                    <strong style="color: #d32f2f;">⏰ این مرحله زمان‌بر است!</strong><br><br>
+                    هوش مصنوعی Gemini در حال ترجمه متن به فارسی است.<br>
+                    زمان تقریبی: <strong>۱-۲ ثانیه برای هر جمله</strong><br>
+                    برای ویدئوهای بلندتر از ۳۰ ثانیه، این مرحله چند دقیقه طول می‌کشد.<br><br>
+                    <strong style="color: #e65100;">🚨 لطفاً تب مرورگر را نبندید و صبور باشید!</strong><br>
+                    صفحه به صورت خودکار هر ۲ ثانیه به‌روزرسانی می‌شود.
+                </div>
+            </div>
+            {% elif status == 'generating_subtitles' %}
+            <div class="stage-info">
+                <div class="stage-title">📝 مرحله ۴ از ۵: ساخت فایل زیرنویس</div>
+                <div class="stage-description">
+                    فایل زیرنویس SRT با زمان‌بندی دقیق ساخته می‌شود.<br>
+                    این مرحله بسیار سریع است (کمتر از ۱ ثانیه).
+                </div>
+            </div>
+            {% elif status == 'burning_subtitles' %}
+            <div class="stage-info">
+                <div class="stage-title">🎬 مرحله ۵ از ۵: چسباندن زیرنویس به ویدئو</div>
+                <div class="stage-description">
+                    FFmpeg در حال چسباندن زیرنویس فارسی به ویدئو است.<br>
+                    این مرحله به طول ویدئو بستگی دارد (معمولاً ۵-۱۵ ثانیه).<br>
+                    <strong>تقریباً تمام شد! 🎉</strong>
+                </div>
+            </div>
+            {% elif status == 'started' %}
+            <div class="stage-info">
+                <div class="stage-title">🚀 آماده‌سازی</div>
+                <div class="stage-description">
+                    سیستم در حال آماده‌سازی برای پردازش ویدئو است...<br>
+                    لطفاً چند لحظه صبر کنید.
+                </div>
+            </div>
+            {% endif %}
+
+            {% if status == 'completed' %}
+            <div class="success">
+                ✅ پردازش با موفقیت انجام شد!
+                
+                {% if timing %}
+                <div class="timing-info">
+                    <div class="timing-title">⏱️ زمان‌بندی پردازش</div>
+                    <div class="total-time">
+                        ⏰ زمان کل: {{ "%.1f"|format(timing.total_duration if timing.total_duration else 0) }} ثانیه
+                    </div>
+                    {% if timing.stages.downloading %}
+                    <div class="stage-timing">
+                        <span class="stage-name">📥 دانلود ویدئو</span>
+                        <span class="stage-duration">{{ "%.1f"|format(timing.stages.downloading.duration if timing.stages.downloading.duration else 0) }} ثانیه</span>
+                    </div>
+                    {% endif %}
+                    {% if timing.stages.transcribing %}
+                    <div class="stage-timing">
+                        <span class="stage-name">🎤 رونویسی صوت</span>
+                        <span class="stage-duration">{{ "%.1f"|format(timing.stages.transcribing.duration if timing.stages.transcribing.duration else 0) }} ثانیه</span>
+                    </div>
+                    {% endif %}
+                    {% if timing.stages.translating %}
+                    <div class="stage-timing">
+                        <span class="stage-name">🌐 ترجمه به فارسی</span>
+                        <span class="stage-duration">{{ "%.1f"|format(timing.stages.translating.duration if timing.stages.translating.duration else 0) }} ثانیه</span>
+                    </div>
+                    {% endif %}
+                    {% if timing.stages.generating_subtitles %}
+                    <div class="stage-timing">
+                        <span class="stage-name">📝 ساخت زیرنویس</span>
+                        <span class="stage-duration">{{ "%.1f"|format(timing.stages.generating_subtitles.duration if timing.stages.generating_subtitles.duration else 0) }} ثانیه</span>
+                    </div>
+                    {% endif %}
+                    {% if timing.stages.burning_subtitles %}
+                    <div class="stage-timing">
+                        <span class="stage-name">🎬 چسباندن زیرنویس</span>
+                        <span class="stage-duration">{{ "%.1f"|format(timing.stages.burning_subtitles.duration if timing.stages.burning_subtitles.duration else 0) }} ثانیه</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="video-result">
+                    <video controls>
+                        <source src="/api/preview/{{ output_file }}" type="video/mp4">
+                    </video>
+                    <form method="GET" action="/api/download/{{ output_file }}">
+                        <button type="submit" class="download-btn">⬇️ دانلود فایل نهایی</button>
+                    </form>
+                    <form method="POST" action="/simple/process">
+                        <button type="submit" style="background: linear-gradient(135deg, #FF9800 0%, #FB8C00 100%); margin-top: 10px;">🔄 پردازش ویدئو جدید</button>
+                    </form>
+                </div>
+            </div>
+            {% elif status == 'failed' %}
+            <div class="error">
+                ❌ خطا: {{ message }}
+                <form method="POST" action="/simple/process">
+                    <button type="submit" style="margin-top: 15px;">🔄 تلاش مجدد</button>
+                </form>
+            </div>
+            {% else %}
+            <meta http-equiv="refresh" content="2">
+            <p style="text-align: center; color: #666; margin-top: 15px;">
+                ⏳ در حال پردازش... صفحه به صورت خودکار به‌روزرسانی می‌شود
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            نوشته شده توسط ویتامین توسط هوش مصنوعی برای ویتامینی ها<br>
+            <small>Powered by Whisper + Gemini 2.5 Flash</small>
+        </div>
+    </div>
+</body>
+</html>
